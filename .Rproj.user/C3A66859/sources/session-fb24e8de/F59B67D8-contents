@@ -1,0 +1,212 @@
+---
+title: "Estatística no R - 2026.1"
+subtitle: "Disciplina: Metodologia em Pesquisa Quantitiva"
+author: "Prof. Maurício Bueno"
+date: "`r Sys.Date()`"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    toc-title: "Sumário"
+    toc-expand: true
+    toc-location: left
+  docx: 
+    toc: true
+    toc-depth: 3
+    prefer-html: true
+execute: 
+  eval: true
+editor: 
+  markdown: 
+    wrap: sentence
+editor_options: 
+  chunk_output_type: console
+---
+
+# Carregamento dos pacotes
+
+```{r}
+# Comando para atualizar todos os pacotes
+# update.packages(ask = FALSE)
+
+pacman::p_load(tidyverse,psych,corrplot,pander,knitr,lavaan,car,DescTools,
+               kableExtra,readxl)
+# options(repos = c(CRAN = "https://cran.rstudio.com/"))
+
+```
+
+
+
+# Prova
+
+Importar o arquivos bsq_eat.csv e dados_teg.csv e salvá-los como dataframes *bsq_eat* e *teg*, respectivamente.
+
+```{r}
+## Importa o arquivo do github para o computador (fora do R)
+link_bsq_eat <-
+"https://github.com/jmhbueno/arquivos_aulas/raw/main/bsq_eat.csv"
+
+download.file(
+  url = link_bsq_eat,
+  destfile = "bsq_eat.csv",
+  mode = "wb")
+
+bsq_eat <-                 # nome atribuído ao dataframe
+  read.csv(                # função da base para importar arquivos csv
+    "bsq_eat.csv",         # nome do arquivo csv
+    encoding="UTF-8",      # codificação para ler cedilhas, til, etc...
+    stringsAsFactors=TRUE) # transformar variáveis string em fator
+
+link_bsq_eat_paper <- 
+  "https://github.com/jmhbueno/arquivos_aulas/raw/main/2018%20-%20Aspects%20Related%20to%20Body%20Image%20and%20Eating%20Behavior%20sin%20Healthy%20Brazilian%20Undergraduate%20Students.pdf"
+
+download.file(
+  url = link_bsq_eat_paper,
+  destfile = "paper_imagem_corporal.pdf",
+  encoding = "UTF-8"
+)
+
+```
+
+```{r}
+# Importar arquivo bsq_eat.csv
+bsq_eat <- read.csv("bsq_eat.csv",stringsAsFactors = TRUE)
+
+## Transformar variáveis em fatores
+bsq_eat$sexo <- factor(bsq_eat$sexo, 
+                       levels = c(1,2),
+                       labels = c("feminino", "masculino"))
+
+# Importar arquivo dados_teg.csv (Tendência Empreendedora Geral - TEG)
+teg <- read.csv("dados_teg.csv",stringsAsFactors = TRUE)
+
+
+## Atribuir labels
+teg$escolaridade <- factor(teg$escolaridade,
+                               levels = c(1,2,3,4),
+                               labels = c("primario","ginasio","colegial","superior"))
+
+teg$sexo <- factor(teg$sexo,
+                   levels = c(1,2),
+                   labels = c("masculino","feminino"))
+```
+
+1.  Apresente uma tabela com as estatíticas descritivas (média, desvio padrão, mínimo e máximo, simetria e curtose) das variáveis bsq_soma e eat_soma.
+
+```{r}
+describe(bsq_eat[,c("eat_soma","bsq_soma")])
+```
+
+2.  Qual a correlação de imagem corporal (bsq_soma) e transtornos alimentares (eat_soma) com peso atual (peso_atual) e índice de massa corporal (imc)? Informe correlação, N e p-value.
+
+```{r}
+corr.test(bsq_eat[,c("eat_soma","bsq_soma")],bsq_eat[,c("peso_atual","imc")])
+
+```
+
+3.Verificar se há efeito de sexo (só masculino e feminino) em bsq_soma e eat_soma e reportar o resultado, indicando o valor de t, graus de liberdade, p-valor e médias.
+*Dica: é preciso: 1) transformar a variável `sexo` em fator, 2) atribuir levels à variável sexo (feminino, masculino e NA), 3) eliminar as categorias diferentes de "masculino" e "feminino" dentro da variável sexo*.
+
+```{r}
+# Verificação da homogeneidade das variâncias (teste de Levene)
+car::leveneTest(bsq_soma ~ sexo, bsq_eat, center=mean)
+car::leveneTest(eat_soma ~ sexo, bsq_eat, center=mean)
+
+# Cálculo do t-teste
+t.test(bsq_soma ~ sexo, bsq_eat, var.equal = FALSE)
+t.test(eat_soma ~ sexo, bsq_eat, var.equal = FALSE)
+```
+
+4.  Utilizando o dataframe teg (baixe utilizando o script a seguir), verifique se há efeito de *escolaridade* sobre a *tendência ao empreendedorismo geral (teg)*
+
+```{r}
+# ----
+link_dados_teg <-
+"https://github.com/jmhbueno/arquivos_aulas/raw/main/dados_teg.csv"
+
+download.file(
+  url = link_dados_teg,
+  destfile = "dados_teg.csv",
+  mode = "wb")
+
+teg <-                 # nome atribuído ao dataframe
+  read.csv(                # função da base para importar arquivos csv
+    "dados_teg.csv",         # nome do arquivo csv
+    encoding="UTF-8",      # codificação para ler cedilhas, til, etc...
+    stringsAsFactors=TRUE) # transformar variáveis string em fator
+
+```
+
+
+```{r}
+
+mod_aov_teg <- aov(teg ~ escolaridade,teg)
+summary(mod_aov_teg)
+
+
+tableby(escolaridade ~ teg, data = teg, test = FALSE) %>% summary(text = TRUE)
+```
+
+5.  Apresente as estatísticas descritivas das questões 3 e 4 em gráficos
+
+```{r}
+
+# Imagem corporal por sexo
+
+bsq_eat %>%
+  drop_na(bsq_soma,sexo) %>% 
+  ggplot() + 
+  geom_point(aes(x=sexo,
+                 y=bsq_soma),
+             stat = "summary",
+             fun = "mean") + 
+  geom_errorbar(aes(x=sexo,
+                    y=bsq_soma),
+                stat = "summary",
+                fun.data = "mean_se",
+                width = 0.3) + 
+  coord_cartesian(ylim = c(50,90)) +
+  labs(title = "Imagem Corporal por Sexo",
+       x = "Sexo",
+       y = "Imagem Corporal")
+
+# Transtornos alimentares por sexo
+bsq_eat %>%
+  drop_na(bsq_soma,sexo) %>% 
+  ggplot() + 
+  geom_point(aes(x=sexo,
+                 y=eat_soma),
+             stat = "summary",
+             fun = "mean") + 
+  geom_errorbar(aes(x=sexo,
+                    y=eat_soma),
+                stat = "summary",
+                fun.data = "mean_se",
+                width = 0.3) + 
+  coord_cartesian(ylim = c(7,13)) +
+# Título e rótulos dos eixos
+  labs(title = "Transtornos Alimentares por Sexo",
+       x = "Sexo",
+       y = "Transtornos Alimentares")
+
+# tendência ao empreendedorismo por escolaridade
+teg %>% 
+  drop_na(teg,escolaridade) %>% 
+  ggplot() +
+  geom_point(aes(x=escolaridade,
+                 y=teg),
+             stat = "summary",
+             fun = "mean") + 
+  geom_errorbar(aes(x=escolaridade,
+                    y=teg),
+                stat = "summary",
+                fun.data = "mean_se",
+                width = 0.3) + 
+  coord_cartesian(ylim = c(22,33)) + 
+  labs(title = "Tendência ao Empreendedorismo por Escolaridade",
+       x = "Escolaridade",
+       y = "Tendência ao Empreendedorismo")
+```
+
+
+

@@ -1,0 +1,62 @@
+---
+title: "Estatística no R - 2026.1"
+subtitle: "Disciplina: Metodologia em Pesquisa Quantitiva"
+author: "Prof. Maurício Bueno"
+date: "`r Sys.Date()`"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    toc-title: "Sumário"
+    toc-expand: true
+    toc-location: left
+  docx: 
+    toc: true
+    toc-depth: 3
+    prefer-html: true
+execute: 
+  eval: true
+editor: 
+  markdown: 
+    wrap: sentence
+editor_options: 
+  chunk_output_type: console
+---
+
+Esta disciplina tem o objetivo de instrumentalizar o aluno para a realização das análises estatísticas mais empregadas em pesquisas em psicologia, no ambiente de programação R.
+Inicialmente, vamos carregar e ativar os pacotes que iremos utilizar na disciplina.
+
+# Carregamento dos pacotes
+
+```{r}
+# Comando para atualizar todos os pacotes
+# update.packages(ask = FALSE)
+
+pacman::p_load(tidyverse,psych,corrplot,pander,knitr,lavaan,car,DescTools,
+               kableExtra,readxl)
+# options(repos = c(CRAN = "https://cran.rstudio.com/"))
+
+```
+
+A função p_load, do pacote pacman, verifica se um pacote está instalado e em caso negativo tenta instalar o pacote a partir do CRAN ou de qualquer outro repositório na lista de repositórios do pacman.
+
+Utilizando os comandos a seguir, você pode baixar todos os comandos deste arquivo em .html e em .qmd.
+
+```{r}
+link_StatR_2026_html <- "https://github.com/jmhbueno/Arquivos_aulas/raw/main/2026_StatR_alunos.html"
+
+## Importa o arquivo do github para o computador (fora do R)
+download.file(
+  url = link_StatR_2026_html,
+  destfile = "StatR_2026_github.html",
+  mode = "wb")
+
+link_StatR_2026_qmd <- "https://github.com/jmhbueno/Arquivos_aulas/raw/main/2026_StatR_alunos.qmd"
+
+## Importa o arquivo do github para o computador (fora do R)
+download.file(
+  url = link_StatR_2026_qmd,
+  destfile = "StatR_2026_github.qmd",
+  mode = "wb")
+
+```
